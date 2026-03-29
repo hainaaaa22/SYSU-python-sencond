@@ -1,6 +1,7 @@
 # 引入作业允许的Python标准库
 import random
-import os  # 新增：用于文件/路径操作，后续生成考场表/准考证会高频使用
+import os
+import time  # 新增：用于获取并格式化生成时间
 
 
 # ====================== 【任务1】Student 数据类 ======================
@@ -16,12 +17,13 @@ class Student:
         return f"学号：{self.student_id}，姓名：{self.name}，性别：{self.gender}，班级：{self.cls}，学院：{self.college}"
 
 
-# ====================== 【任务2-5】ExamSystem 逻辑控制类（新增静态方法） ======================
+# ====================== 【任务2-6】ExamSystem 逻辑控制类 ======================
 class ExamSystem:
     def __init__(self, file_path="人工智能编程语言学生名单.txt"):
         self.file_path = file_path  # 学生文件路径
         self.student_list = []  # 存储所有学生对象的列表
         self.read_student_file()  # 初始化自动读取文件
+        self.shuffled_students = []  # 新增：存储打乱后的学生列表，供考场表/准考证复用
 
     # 读取学生名单文件方法（修正版）
     def read_student_file(self):
@@ -86,7 +88,7 @@ class ExamSystem:
         except ValueError:
             print(f"❌ 输入错误！请输入纯数字的有效数量！")
 
-    # 【任务5】新增：静态方法 - 路径拼接（作业硬性要求，后续高频复用）
+    # 【任务5】静态方法 - 路径拼接
     @staticmethod
     def join_path(*args):
         """
@@ -96,8 +98,42 @@ class ExamSystem:
         """
         return os.path.join(*args)
 
+    # 【任务6】新增：生成考场安排表（核心功能）
+    def generate_exam_table(self):
+        # 前置校验：无学生数据直接返回
+        if not self.student_list:
+            print("❌ 暂无学生数据，无法生成考场安排表！")
+            return
 
-# ====================== 【任务1-5】综合检测代码（含静态方法验证） ======================
+        # 核心步骤1：随机打乱学生顺序，结果存入实例属性，供后续准考证复用
+        self.shuffled_students = random.sample(self.student_list, len(self.student_list))
+        # 核心步骤2：获取格式化生成时间（严格按作业要求：2026-03-23 10:00:00）
+        create_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        # 核心步骤3：拼接考场安排表文件路径（根目录）
+        table_path = self.join_path(".", "考场安排表.txt")
+
+        try:
+            # 写入考场安排表文件（UTF-8编码防止中文乱码）
+            with open(table_path, "w", encoding="utf-8") as f:
+                # 首行写入生成时间（作业硬性要求）
+                f.write(f"生成时间：{create_time}\n")
+                # 遍历打乱后的学生，按【座位号 姓名 学号】格式写入
+                for seat_num, stu in enumerate(self.shuffled_students, 1):
+                    f.write(f"{seat_num}\t{stu.name}\t{stu.student_id}\n")
+
+            print(f"\n✅ 考场安排表生成成功！")
+            print(f"📁 文件路径：{os.path.abspath(table_path)}")  # 打印绝对路径，方便查找
+            return True  # 返回成功标识，供后续准考证方法判断
+        # 处理文件写入异常（如权限不足、路径错误）
+        except PermissionError:
+            print(f"❌ 生成失败：无文件写入权限，请检查目录权限！")
+            return False
+        except Exception as e:
+            print(f"❌ 考场安排表生成失败：{e}")
+            return False
+
+
+# ====================== 【任务1-6】综合检测代码 ======================
 if __name__ == "__main__":
     # 1. 初始化系统（自动读取学生数据）
     system = ExamSystem()
@@ -112,14 +148,13 @@ if __name__ == "__main__":
     # 3. 测试随机点名功能
     system.random_call()
 
-    # 4. 【任务5】测试静态方法（两种核心使用场景，后续直接复用）
+    # 4. 测试静态方法-路径拼接
     print("\n===== 静态方法-路径拼接 测试 =====")
-    # 场景1：拼接考场安排表路径（根目录）
     exam_table_path = ExamSystem.join_path(".", "考场安排表.txt")
     print(f"考场安排表完整路径：{exam_table_path}")
-    # 场景2：拼接准考证文件路径（准考证文件夹内）
-    ticket_path = ExamSystem.join_path("准考证", "01.txt")
+    ticket_path = system.join_path("准考证", "01.txt")
     print(f"准考证01.txt完整路径：{ticket_path}")
-    # 静态方法可通过类/实例两种方式调用，均有效
-    ticket_path2 = system.join_path("准考证", "02.txt")
-    print(f"准考证02.txt完整路径：{ticket_path2}")
+
+    # 5. 【任务6】测试生成考场安排表功能
+    print("\n===== 生成考场安排表功能 =====")
+    system.generate_exam_table()
