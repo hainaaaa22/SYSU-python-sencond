@@ -1,3 +1,8 @@
+# 引入作业允许的Python标准库
+import random
+import os  # 新增：用于文件/路径操作，后续生成考场表/准考证会高频使用
+
+
 # ====================== 【任务1】Student 数据类 ======================
 class Student:
     def __init__(self, name, gender, cls, student_id, college):
@@ -11,10 +16,7 @@ class Student:
         return f"学号：{self.student_id}，姓名：{self.name}，性别：{self.gender}，班级：{self.cls}，学院：{self.college}"
 
 
-# ====================== 【任务2-4】ExamSystem 逻辑控制类 ======================
-import random  # 引入Python标准库，符合作业要求
-
-
+# ====================== 【任务2-5】ExamSystem 逻辑控制类（新增静态方法） ======================
 class ExamSystem:
     def __init__(self, file_path="人工智能编程语言学生名单.txt"):
         self.file_path = file_path  # 学生文件路径
@@ -62,9 +64,8 @@ class ExamSystem:
                 return
         print(f"\n❌ 未查询到学号为【{input_id}】的学生，请检查学号是否输入正确！")
 
-    # 【任务4】随机点名方法（核心新功能）
+    # 【任务4】随机点名方法
     def random_call(self):
-        # 先判断是否有学生数据，避免无数据时报错
         if not self.student_list:
             print("❌ 暂无学生数据，无法执行随机点名！")
             return
@@ -73,34 +74,52 @@ class ExamSystem:
         print(f"\n===== 随机点名功能 =====")
         print(f"当前可点名人数范围：1 - {total}")
         try:
-            # 获取用户输入并转换为整型
             num = int(input(f"请输入需要点名的学生数量："))
-            # 校验输入数量是否在合法范围
             if num < 1 or num > total:
                 print(f"❌ 输入错误！数量必须在1-{total}之间，请重新输入！")
                 return
-            # 随机抽取不重复的学生（sample：无放回抽样，完美实现不重复）
+            # 无放回抽样，保证不重复
             random_students = random.sample(self.student_list, num)
-            # 打印点名结果
             print(f"\n✅ 本次随机点名{num}名学生，结果如下：")
             for i, stu in enumerate(random_students, 1):
                 print(f"{i}. 姓名：{stu.name}，学号：{stu.student_id}，学院：{stu.college}")
-        # 处理用户输入非数字的异常（ValueError）
         except ValueError:
             print(f"❌ 输入错误！请输入纯数字的有效数量！")
 
+    # 【任务5】新增：静态方法 - 路径拼接（作业硬性要求，后续高频复用）
+    @staticmethod
+    def join_path(*args):
+        """
+        静态方法：统一处理路径拼接，兼容Windows/Mac/Linux系统
+        :param args: 路径片段，如("准考证", "01.txt")、(".", "考场安排表.txt")
+        :return: 拼接后的完整路径
+        """
+        return os.path.join(*args)
 
-# ====================== 【任务1-4】综合检测代码 ======================
+
+# ====================== 【任务1-5】综合检测代码（含静态方法验证） ======================
 if __name__ == "__main__":
     # 1. 初始化系统（自动读取学生数据）
     system = ExamSystem()
     if not system.student_list:
-        exit()  # 无学生数据则直接退出，避免后续功能报错
+        exit()  # 无学生数据则直接退出
 
     # 2. 测试学号查找功能
     print("\n===== 学生信息查找功能 =====")
     student_id = input("请输入要查询的学生学号：")
     system.search_student_by_id(student_id)
 
-    # 3. 测试随机点名功能（核心测试）
+    # 3. 测试随机点名功能
     system.random_call()
+
+    # 4. 【任务5】测试静态方法（两种核心使用场景，后续直接复用）
+    print("\n===== 静态方法-路径拼接 测试 =====")
+    # 场景1：拼接考场安排表路径（根目录）
+    exam_table_path = ExamSystem.join_path(".", "考场安排表.txt")
+    print(f"考场安排表完整路径：{exam_table_path}")
+    # 场景2：拼接准考证文件路径（准考证文件夹内）
+    ticket_path = ExamSystem.join_path("准考证", "01.txt")
+    print(f"准考证01.txt完整路径：{ticket_path}")
+    # 静态方法可通过类/实例两种方式调用，均有效
+    ticket_path2 = system.join_path("准考证", "02.txt")
+    print(f"准考证02.txt完整路径：{ticket_path2}")
