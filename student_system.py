@@ -14,7 +14,7 @@ class Student:
         return f"学号：{self.student_id}，姓名：{self.name}，性别：{self.gender}，班级：{self.cls}，学院：{self.college}"
 
 
-# ====================== 【任务2】ExamSystem 逻辑控制类 ======================
+# ====================== 【任务2】ExamSystem 逻辑控制类 + 【任务3】查找功能 ======================
 class ExamSystem:
     # 初始化系统：传入学生名单文件路径
     def __init__(self, file_path="人工智能编程语言学生名单.txt"):
@@ -65,16 +65,30 @@ class ExamSystem:
             print(f"❌ 读取文件失败：{e}")
             self.student_list = []
 
+    # 【任务3】新增：按学号查找学生功能
+    def search_student_by_id(self, input_id):
+        # 遍历学生列表，匹配学号
+        for student in self.student_list:
+            if student.student_id == input_id:
+                print("\n✅ 查询到学生信息：")
+                print(student)
+                return  # 找到后直接返回，结束方法
+        # 遍历结束未找到，给出友好提示
+        print(f"\n❌ 未查询到学号为【{input_id}】的学生，请检查学号是否输入正确！")
 
-# ====================== 检测代码 ======================
+
+# ====================== 【任务3】检测代码（含交互输入） ======================
 if __name__ == "__main__":
     # 1. 创建系统（自动读取学生名单）
     system = ExamSystem()
 
-    # 2. 打印所有学生，验证是否读取成功
+    # 2. 验证所有学生读取成功（可选）
     print("\n===== 所有学生信息 =====")
     for stu in system.student_list:
         print(stu)
-
-    # 3. 打印总人数
     print(f"\n📊 学生总数：{len(system.student_list)}")
+
+    # 3. 测试学号查找功能（交互式输入，模拟用户操作）
+    print("\n===== 学生信息查找功能 =====")
+    student_id = input("请输入要查询的学生学号：")
+    system.search_student_by_id(student_id)
