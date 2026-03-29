@@ -17,15 +17,15 @@ class Student:
         return f"学号：{self.student_id}，姓名：{self.name}，性别：{self.gender}，班级：{self.cls}，学院：{self.college}"
 
 
-# ====================== 【任务2-7】ExamSystem 逻辑控制类（完整功能） ======================
+# ====================== 【任务2-8】ExamSystem 逻辑控制类（全功能封装） ======================
 class ExamSystem:
     def __init__(self, file_path="人工智能编程语言学生名单.txt"):
         self.file_path = file_path  # 学生文件路径
         self.student_list = []  # 存储所有学生对象的列表
-        self.read_student_file()  # 初始化自动读取文件
         self.shuffled_students = []  # 存储打乱后的学生列表，供考场表/准考证复用
+        self.read_student_file()  # 初始化自动读取文件
 
-    # 读取学生名单文件方法（修正版）
+    # 【任务2】读取学生名单文件方法（修正版）
     def read_student_file(self):
         try:
             with open(self.file_path, "r", encoding="utf-8") as f:
@@ -45,40 +45,42 @@ class ExamSystem:
                 student = Student(name, gender, cls, student_id, college)
                 self.student_list.append(student)
 
-            print(f"✅ 成功读取学生文件！共加载 {len(self.student_list)} 名学生信息")
+            print(f"✅ 初始化成功！共加载 {len(self.student_list)} 名学生信息")
 
         except FileNotFoundError:
-            print(f"❌ 错误：未找到文件 {self.file_path}，请把文件放在同一目录！")
+            print(f"❌ 初始化失败：未找到文件【{self.file_path}】，请将文件放在程序同一目录！")
             self.student_list = []
         except ValueError as e:
-            print(f"❌ 数据格式转换错误：{e}，请检查学生名单文件的字段格式！")
+            print(f"❌ 初始化失败：数据格式转换错误【{e}】，请检查学生名单文件格式！")
             self.student_list = []
         except Exception as e:
-            print(f"❌ 读取文件失败：{e}")
+            print(f"❌ 初始化失败：{e}")
             self.student_list = []
 
     # 【任务3】按学号查找学生方法
-    def search_student_by_id(self, input_id):
+    def search_student_by_id(self):
+        if not self.student_list:
+            return
+        print("\n===== 学生信息查找 =====")
+        input_id = input("请输入要查询的学生学号：").strip()
         for student in self.student_list:
             if student.student_id == input_id:
-                print("\n✅ 查询到学生信息：")
+                print("✅ 查询到学生信息：")
                 print(student)
                 return
-        print(f"\n❌ 未查询到学号为【{input_id}】的学生，请检查学号是否输入正确！")
+        print(f"❌ 未查询到学号为【{input_id}】的学生，请检查学号是否正确！")
 
     # 【任务4】随机点名方法
     def random_call(self):
         if not self.student_list:
-            print("❌ 暂无学生数据，无法执行随机点名！")
             return
-
         total = len(self.student_list)
-        print(f"\n===== 随机点名功能 =====")
+        print("\n===== 随机点名 =====")
         print(f"当前可点名人数范围：1 - {total}")
         try:
-            num = int(input(f"请输入需要点名的学生数量："))
+            num = int(input("请输入需要点名的学生数量：").strip())
             if num < 1 or num > total:
-                print(f"❌ 输入错误！数量必须在1-{total}之间，请重新输入！")
+                print(f"❌ 输入错误！数量必须在1-{total}之间！")
                 return
             # 无放回抽样，保证不重复
             random_students = random.sample(self.student_list, num)
@@ -88,7 +90,7 @@ class ExamSystem:
         except ValueError:
             print(f"❌ 输入错误！请输入纯数字的有效数量！")
 
-    # 【任务5】静态方法 - 路径拼接
+    # 【任务5】静态方法 - 路径拼接（满足OOP硬性要求，全程复用）
     @staticmethod
     def join_path(*args):
         """
@@ -102,9 +104,7 @@ class ExamSystem:
     def generate_exam_table(self):
         # 前置校验：无学生数据直接返回
         if not self.student_list:
-            print("❌ 暂无学生数据，无法生成考场安排表！")
             return False
-
         # 随机打乱学生顺序，结果存入实例属性供准考证复用
         self.shuffled_students = random.sample(self.student_list, len(self.student_list))
         # 获取格式化生成时间（严格按作业要求：2026-03-23 10:00:00）
@@ -132,16 +132,14 @@ class ExamSystem:
             print(f"❌ 考场安排表生成失败：{e}")
             return False
 
-    # 【任务7】新增：生成准考证文件夹+独立文件（最后一个功能）
+    # 【任务7】生成准考证文件夹+独立文件方法
     def generate_admission_ticket(self):
         # 前置校验1：无学生数据直接返回
         if not self.student_list:
-            print("❌ 暂无学生数据，无法生成准考证！")
             return
-        # 前置校验2：未生成考场安排表（无打乱数据），先提示生成
+        # 前置校验2：未生成考场安排表（无打乱数据），先提示并自动生成
         if not self.shuffled_students:
-            print("⚠️  未检测到考场安排数据，请先生成考场安排表！")
-            # 自动尝试生成考场安排表
+            print("⚠️  未检测到考场安排数据，正在自动生成...")
             if not self.generate_exam_table():
                 return
 
@@ -151,13 +149,11 @@ class ExamSystem:
         os.makedirs(ticket_dir, exist_ok=True)
 
         try:
-            # 遍历打乱后的学生，生成对应序号的准考证文件
+            # 遍历打乱后的学生，生成对应序号的准考证文件（补零为2位）
             for seat_num, stu in enumerate(self.shuffled_students, 1):
-                # 文件名补零为2位（01.txt、02.txt...10.txt），符合作业要求
                 file_name = f"{seat_num:02d}.txt"
-                # 拼接单个准考证文件的完整路径
                 ticket_file = self.join_path(ticket_dir, file_name)
-                # 写入准考证信息：考场座位号、姓名、学号
+                # 写入准考证信息：考场座位号、姓名、学号（严格按作业要求）
                 with open(ticket_file, "w", encoding="utf-8") as f:
                     f.write(f"考场座位号：{seat_num}\n")
                     f.write(f"姓名：{stu.name}\n")
@@ -172,32 +168,51 @@ class ExamSystem:
             print(f"❌ 准考证生成失败：{e}")
 
 
-# ====================== 【任务1-7】综合检测代码（完整功能测试） ======================
-if __name__ == "__main__":
-    # 1. 初始化系统（自动读取学生数据）
+# ====================== 【任务8】交互式主菜单（程序入口） ======================
+def main():
+    """主程序入口：交互式菜单，整合所有功能"""
+    print("=" * 50)
+    print("    学生信息与考场管理系统 V1.0")
+    print("=" * 50)
+    # 初始化系统
     system = ExamSystem()
+    # 无学生数据时直接退出程序
     if not system.student_list:
-        exit()  # 无学生数据则直接退出
+        input("\n按任意键退出程序...")
+        return
 
-    # 2. 测试学号查找功能
-    print("\n===== 学生信息查找功能 =====")
-    student_id = input("请输入要查询的学生学号：")
-    system.search_student_by_id(student_id)
+    # 循环执行菜单，直到用户选择退出
+    while True:
+        print("\n" + "-" * 50)
+        print("请选择需要执行的功能（输入序号即可）：")
+        print("1. 学生信息查找（按学号）")
+        print("2. 随机点名（指定数量，不重复）")
+        print("3. 生成考场安排表（根目录输出txt）")
+        print("4. 生成准考证文件（自动创建准考证文件夹）")
+        print("5. 退出系统")
+        print("-" * 50)
 
-    # 3. 测试随机点名功能
-    system.random_call()
+        # 获取用户菜单选择
+        choice = input("请输入功能序号：").strip()
+        # 根据选择执行对应功能
+        if choice == "1":
+            system.search_student_by_id()
+        elif choice == "2":
+            system.random_call()
+        elif choice == "3":
+            system.generate_exam_table()
+        elif choice == "4":
+            system.generate_admission_ticket()
+        elif choice == "5":
+            print("\n✅ 感谢使用学生信息与考场管理系统，程序已退出！")
+            break
+        else:
+            print("\n❌ 输入错误！请输入1-5之间的有效序号！")
 
-    # 4. 测试静态方法-路径拼接
-    print("\n===== 静态方法-路径拼接 测试 =====")
-    exam_table_path = ExamSystem.join_path(".", "考场安排表.txt")
-    print(f"考场安排表完整路径：{exam_table_path}")
-    ticket_path = system.join_path("准考证", "01.txt")
-    print(f"准考证01.txt完整路径：{ticket_path}")
+        # 执行完功能后，暂停让用户查看结果
+        input("\n按任意键返回主菜单...")
 
-    # 5. 测试生成考场安排表功能
-    print("\n===== 生成考场安排表功能 =====")
-    system.generate_exam_table()
 
-    # 6. 【任务7】测试生成准考证功能
-    print("\n===== 生成准考证功能 =====")
-    system.generate_admission_ticket()
+# 程序启动入口
+if __name__ == "__main__":
+    main()
